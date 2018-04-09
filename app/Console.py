@@ -104,7 +104,7 @@ class Console(object):
 		self.broadcastString = ''
 		self.showOutputString = False
 		self.sp = app.serial_IO.serial_packet.SerialPacket(self.game)
-		self.serialInputRefreshFrequency = 0.004
+		self.serialInputRefreshFrequency = 0.005
 		self.serialOutputRefreshFrequency = .1
 		self.checkEventsRefreshFrequency = self.game.gameSettings['periodClockResolution']
 		self.serialString = ''
@@ -187,7 +187,7 @@ class Console(object):
 				self.previousByteCount = 0
 				self.refresherSerialInput.start()
 				if self.serialInputType == 'MP':
-					self.checkEventsRefreshFrequency = self.checkEventsRefreshFrequency/10
+					self.checkEventsRefreshFrequency = self.checkEventsRefreshFrequency/2
 
 			if self.checkEventsFlag and not internal_reset:
 				if self.serialInputType == 'ASCII':
@@ -241,32 +241,16 @@ class Console(object):
 		"""Inputs serial packets."""
 		if self.print_input_time_flag:
 			tic = time.time()
-			print 'serial Input', (tic-self.initTime)
+			init_elapse = tic-self.initTime
+			print '(serial Input %s)' % init_elapse
 		self.s.serial_input()
 
 	def _serial_output(self):
 		"""Outputs serial packets."""
 		if self.printTimesFlag or self.verboseDiagnostic:
 			tic = time.time()
-			print '-----------serial Output', (tic-self.initTime)
-
-		if self.encodePacketFlag:
-			if self.serialInputType == 'ASCII':
-				# ASCII coming in
-				pass
-			else:
-				# MP coming in
-				# print 'self.addrMap.quantumETNTunnel', self.addrMap.quantumETNTunnel
-				packet = None
-				
-				if self.addrMap.quantumETNTunnelProcessed:
-					self.addrMap.quantumETNTunnelProcessed = False
-					e_t_n_flag = True
-					self.serialString = self.sp.encode_packet(print_string=True, e_t_n_flag=e_t_n_flag, packet=packet)
-				else:
-					e_t_n_flag = False
-				
-					self.serialString = self.sp.encode_packet(print_string=True, e_t_n_flag=e_t_n_flag, packet=packet)
+			init_elapse = tic-self.initTime
+			print '(-----------serial Output %s)' % init_elapse
 
 		try:
 			self.s.serial_output(self.serialString)
@@ -288,7 +272,8 @@ class Console(object):
 		"""
 		tic = time.time()
 		if self.printTimesFlag or self.verboseDiagnostic:
-			print '_check_events', (tic-self.initTime)
+			init_elapse = tic-self.initTime
+			print '(-----_check_events %s)' % init_elapse
 
 		# This is how the check events function is called when not on linux
 		if (_platform == "win32" or _platform == "darwin") and self.checkEventsFlag:
@@ -314,7 +299,9 @@ class Console(object):
 					
 					# This aligns the output to after the input receive gap starts
 					if self.previousByteCount and len(self.s.receiveList) == 0:
-						self.alignTime = tic
+						# This should make the output thread fire shift_time ms before the next check events firing
+						shift_time = 0.001
+						self.alignTime = tic + self.checkEventsRefreshFrequency - shift_time
 					self.previousByteCount = len(self.s.receiveList)
 
 					# Clear buffered MP words
@@ -342,6 +329,26 @@ class Console(object):
 				self.updateMPData()
 
 				self.updateMP_Packet()
+
+			if self.encodePacketFlag:
+				if self.serialInputType == 'ASCII':
+					# ASCII coming in
+					pass
+				else:
+					# MP coming in
+					# print 'self.addrMap.quantumETNTunnel', self.addrMap.quantumETNTunnel
+					packet = None
+
+					if self.addrMap.quantumETNTunnelProcessed:
+						self.addrMap.quantumETNTunnelProcessed = False
+						e_t_n_flag = True
+						self.serialString = self.sp.encode_packet(
+							print_string=True, e_t_n_flag=e_t_n_flag, packet=packet)
+					else:
+						e_t_n_flag = False
+
+						self.serialString = self.sp.encode_packet(
+							print_string=False, e_t_n_flag=e_t_n_flag, packet=packet)
 
 			# Time measurement for testing
 			toc = time.time()
