@@ -40,22 +40,18 @@ def thread_timer(passed_function, period=.01, arg=None, align_time=0.0):
 	"""
 	next_call = time.time()
 	start_time = time.time()
-	#print 'start_time', start_time
 	if _platform == "linux" or _platform == "linux2":
 		os.nice(-1)
 		if align_time:
-			#print 'align_time', align_time
-			#print 'start_time', start_time
 			next_call = align_time
 			count = 0
 			while (next_call-start_time) < 0:
 				next_call = next_call+period
 				count += 1
 			next_call = next_call+period*count
-			#print count, next_call
+			print 'thread_timer adjusted', start_time-align_time, 'seconds'
 
 	stamp = 0
-	#name = threading.current_thread().getName()+str(passed_function)
 	if _platform == "linux" or _platform == "linux2":
 		try:
 			prctl.set_name(passed_function.__name__)
@@ -63,39 +59,25 @@ def thread_timer(passed_function, period=.01, arg=None, align_time=0.0):
 			pass
 	while 1:
 		stamp += 1
-		#start_time=time.time()
-		#print name, 'stamp1', stamp, next_call-1486587172
 		next_call = next_call+period
-		#print name, 'stamp2', stamp, next_call-1486587172
 		if arg is not None:
 			passed_function(arg)
 		else:
 			passed_function()
-		#endTime=time.time()
-		#elapse=endTime-start_time
 		count = 0
 
 		try:
 			now = time.time()
 			time.sleep(next_call-now)
-		except Exception as err:
-			#print name, 'thread_timer sleep error is', err, 'for', function
-			#print name, 'stamp3', stamp, next_call-1486587172, 'next_call-time.time()', next_call-now
+		except:
 			while (next_call-now) < 0:
 				next_call = next_call+period
 				count += 1
-			#print name, 'stamp4', stamp, 'count', count
-			#print name, 'stamp5', stamp, next_call-1486587172
 			next_call = next_call+period*count
-			#print name, 'stamp6', stamp, next_call-1486587172
-			#next_call=next_call+period*(count+1)
-			#print name, 'stamp7', stamp, 'count', count, next_call-1486587172, next_call-now
 			try:
 				now = time.time()
 				time.sleep(next_call-now)
 			except:
-				#print name, 'stamp8', stamp, 'count', count, next_call-1486587172, next_call-now
-				#next_call=next_call+period*(count+3)
 				time.sleep(period)
 
 
