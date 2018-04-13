@@ -90,6 +90,7 @@ class Console(object):
 		self.dirtyDict = {}
 		self.sendList = []
 		self.ETNSendList = []
+		self.ETNStringList = []
 		self.quickKeysPressedList = []
 		self.sendListFlag = False
 		self.ETN_DataFlag = False
@@ -184,6 +185,9 @@ class Console(object):
 				self.alignTime = 0.0
 				self.previousByteCount = 0
 				self.refresherSerialInput.start()
+
+				# Must happen this at least fast for tenth of a second to fully update
+				# because it could land before or after the change
 				self.checkEventsRefreshFrequency = self.checkEventsRefreshFrequency/2
 
 			if self.checkEventsFlag and not internal_reset:
@@ -246,9 +250,17 @@ class Console(object):
 			print '(-----------serial Output %s)' % init_elapse
 
 		try:
-			self.s.serial_output(self.serialString)
-			if self.printTimesFlag or self.verboseDiagnostic or self.ETNSendListFlag:
-				pass  # print 'Serial Output', self.serialString
+			if self.ETNStringList:
+				string = self.ETNStringList[-1]
+				self.ETNStringList.pop(0)
+				if 1 or self.verboseDiagnostic:
+					print 'Serial Output', string, 'len(self.ETNStringList)', len(self.ETNStringList)
+			else:
+				string = self.serialString
+
+			self.s.serial_output(string)
+			if self.verboseDiagnostic:
+				print 'Serial Output', self.serialString
 		except:
 			if not (_platform == "win32" or _platform == "darwin"):
 				print 'Serial Output Error', self.serialString
@@ -259,7 +271,7 @@ class Console(object):
 		"""
 		Checks all events.
 
-		This is called at the checkEventsRefreshFrequency and could be thought of as the main interrupt in a microcontroller.
+		This is called at the checkEventsRefreshFrequency and could be thought of as the main interrupt in a micro-controller.
 
 		The console only updates data for the outside world at this time.
 		"""
@@ -295,14 +307,26 @@ class Console(object):
 				self.reset(internal_reset=1)
 				self.switchKeypadFlag = True
 
-			if self.addrMap.quantumETNTunnelProcessed:
-				self.addrMap.quantumETNTunnelProcessed = False
+			# Build output string or ETN string list
+			if self.addrMap.quantumETNTunnelNameProcessed:
+				self.addrMap.quantumETNTunnelNameProcessed = False
 
-				self.serialString = self.sp.encode_packet(
-					print_string=True, e_t_n_flag=True, packet=None)
+				serial_string = self.sp.process_packet(print_string=False, e_t_n_flag=True, packet=None)
+				self.ETNStringList.append(serial_string)
+
+				# Because we are running check_events twice per output sometimes a one-shot ETN packet can get missed
+				# This redundant doubling of the string buffer ensures it is not lost
+				self.ETNStringList.append(serial_string)
+
+			elif self.addrMap.quantumETNTunnelFontJustifyProcessed:
+				self.addrMap.quantumETNTunnelFontJustifyProcessed = False
+
+				serial_string = self.sp.process_packet(print_string=False, e_t_n_flag=True, packet=None)
+				if self.serialString != serial_string:
+					self.ETNStringList.append(serial_string)
+
 			else:
-				self.serialString = self.sp.encode_packet(
-					print_string=False, e_t_n_flag=False, packet=None)
+				self.serialString = self.sp.process_packet(print_string=False, e_t_n_flag=False, packet=None)
 
 			# Time measurement for testing
 			toc = time.time()

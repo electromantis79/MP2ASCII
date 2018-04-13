@@ -73,7 +73,8 @@ class AddressMapping(object):
 		self.rightETNByte = 0
 		self.quantumETNTunnelTeam = ''
 		self.addressPair = 1
-		self.quantumETNTunnelProcessed = False
+		self.quantumETNTunnelNameProcessed = False
+		self.quantumETNTunnelFontJustifyProcessed = False
 		self.wordListAddrStat = [
 			1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 33, 34, 35, 37, 38, 39, 41, 42,
 			43, 45, 46, 47, 49, 50, 51, 53, 54, 55]
@@ -1072,7 +1073,7 @@ class AddressMapping(object):
 						app.utils.functions.verbose(['Quantum data tunnel closed!!!!'], self.verboseTunnel)
 						self.quantumDimmingTunnel = 0
 						self.quantumETNTunnel = 0
-						self.quantumETNTunnelProcessed = True
+						self.quantumETNTunnelFontJustifyProcessed = True
 
 					elif self.quantumETNTunnel:
 						self.rightETNByte = numeric_data
@@ -1099,7 +1100,7 @@ class AddressMapping(object):
 						app.utils.functions.verbose(['Quantum data tunnel closed!!!!'], self.verboseTunnel)
 						self.quantumDimmingTunnel = 0
 						self.quantumETNTunnel = 0
-						self.quantumETNTunnelProcessed = True
+						self.quantumETNTunnelNameProcessed = True
 
 			else:
 				# Normal data
