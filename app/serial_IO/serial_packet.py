@@ -15,7 +15,7 @@
 
 # TODO: correct naming conventions for local method variables
 
-class SerialPacket (object):
+class SerialPacket(object):
 	"""Creates serial packet object."""
 
 	def __init__(self, game):
@@ -24,9 +24,9 @@ class SerialPacket (object):
 		self.ETNFlag = False
 		self.decodePacket = None
 		self.printCorruption = True
-		self.printETNData = True
+		self.printETNData = False
 		self.large_packet_flag = False
-		
+
 		# Change flags
 		self.ETNChangeFlag = False
 		self.guestNameChangeFlag = False
@@ -66,6 +66,9 @@ class SerialPacket (object):
 		if packet is not None:
 			# Inspect packet for correct format
 			self.etn_check(packet)
+			if self.printETNData and self.ETNFlag:
+				print 'stored_name'
+
 			length_check_ = self._length_check(packet)
 			checksum_check_ = self._checksum_check(packet)
 			if (
@@ -130,7 +133,8 @@ class SerialPacket (object):
 				if self.game.gameData['sportType'] == 'soccer' or self.game.gameData['sportType'] == 'hockey':
 					string = self._team_goal_indicator_string(string, team, packet=self.decodePacket)
 
-				if not (self.game.gameData['sportType'] == 'stat' or self.game.gameData['sportType'] == 'hockey' or self.ETNFlag):
+				if not (self.game.gameData['sportType'] == 'stat' or self.game.gameData[
+					'sportType'] == 'hockey' or self.ETNFlag):
 					string = self._team_possession_string(string, team, packet=self.decodePacket)
 
 				if self.game.gameData['sportType'] == 'soccer' or self.game.gameData['sportType'] == 'hockey':
@@ -229,7 +233,7 @@ class SerialPacket (object):
 	def _version_i_d_byte(self, string):
 		# Sport and version byte, 2
 		sport, version, packet_length = self._version_id()
-		partial_string = sport+version
+		partial_string = sport + version
 		string += partial_string
 		return string
 
@@ -239,7 +243,6 @@ class SerialPacket (object):
 		"""
 		if len(packet) > 1 and packet[1] == 'N':
 			self.ETNFlag = True
-			print 'ETN packet received'
 			return True
 		return False
 
@@ -357,7 +360,7 @@ class SerialPacket (object):
 				thousandthsUnitsByte = int(packet[11])
 			self.game.set_clock_data(clockName, timeListNames[8], tenthsUnitsByte, 1)
 			self.game.set_clock_data(clockName, timeListNames[9], hundredthsUnitsByte, 1)
-			# self.game.set_clock_data(clockName, thousandthsUnits', thousandthsUnitsByte, 1) Does not exist
+		# self.game.set_clock_data(clockName, thousandthsUnits', thousandthsUnitsByte, 1) Does not exist
 
 		# Make the clock variables
 		# colon = self.game.gameData['colonIndicator']
@@ -365,7 +368,8 @@ class SerialPacket (object):
 		# Hours behavior
 		hoursTensByte = self._get_value(clockName + '_' + 'hoursTens', min_value_not_blanked=1)  # blank if 0
 		hoursUnitsByte = self._get_value(
-			clockName+'_'+'hoursUnits', min_value_not_blanked=hoursTensByte == ' ')  # blank if zero if previous blank
+			clockName + '_' + 'hoursUnits',
+			min_value_not_blanked=hoursTensByte == ' ')  # blank if zero if previous blank
 		if hoursTensByte == ' ' and hoursUnitsByte == ' ':
 			# blank if both are blank
 			hoursColonByte = ' '
@@ -374,9 +378,11 @@ class SerialPacket (object):
 
 		# Minutes behavior
 		minutesTensByte = self._get_value(
-			clockName+'_'+'minutesTens', min_value_not_blanked=hoursColonByte == ' ')  # blank if zero if previous blank
+			clockName + '_' + 'minutesTens',
+			min_value_not_blanked=hoursColonByte == ' ')  # blank if zero if previous blank
 		minutesUnitsByte = self._get_value(
-			clockName+'_'+'minutesUnits', min_value_not_blanked=minutesTensByte == ' ')  # blank if zero if previous blank
+			clockName + '_' + 'minutesUnits',
+			min_value_not_blanked=minutesTensByte == ' ')  # blank if zero if previous blank
 		if minutesTensByte == ' ' and minutesUnitsByte == ' ':
 			# blank if both are blank
 			colonByte = ' '
@@ -385,11 +391,11 @@ class SerialPacket (object):
 
 		# Seconds behavior
 		secondsTensByte = self._get_value(
-			clockName+'_'+'secondsTens', min_value_not_blanked=colonByte == ' ')  # blank if zero if previous blank
+			clockName + '_' + 'secondsTens', min_value_not_blanked=colonByte == ' ')  # blank if zero if previous blank
 		secondsUnitsByte = self._get_value(clockName + '_' + 'secondsUnits', min_value_not_blanked=0)
-		
+
 		# Decimal behavior
-		if self.game.gameData[clockName+'_'+'tenthsUnits'] == 15:
+		if self.game.gameData[clockName + '_' + 'tenthsUnits'] == 15:
 			decimalByte = ' '
 		else:
 			decimalByte = '.'
@@ -401,32 +407,32 @@ class SerialPacket (object):
 		else:
 			tenthsUnitsByte = ' '
 			hundredthsUnitsByte = ' '
-		
+
 		LINE5andCjumper = self.game.gameData['sport'] == 'MPLINESCORE5' and 'C' in self.game.gameData['optionJumpers']
 		MULTIbaseOr3450baseCjumper = (
 				(
-					self.game.gameData['sport'] == 'MPMULTISPORT1-baseball'
-					or self.game.gameData['sport'] == 'MPLX3450-baseball'
+						self.game.gameData['sport'] == 'MPMULTISPORT1-baseball'
+						or self.game.gameData['sport'] == 'MPLX3450-baseball'
 				)
 				and 'C' in self.game.gameData['optionJumpers'])
 		BASE1orBASE3Cjumper = (
 				(
 						self.game.gameData['sport'] == 'MPBASEBALL1' or self.game.gameData['sport'] == 'MMBASEBALL3')
 				and 'C' in self.game.gameData['optionJumpers'])
-		
+
 		# Override if 2 digit clock baseball
 		if LINE5andCjumper or MULTIbaseOr3450baseCjumper or BASE1orBASE3Cjumper:
 			decimalByte = ' '
 			tenthsUnitsByte = ' '
 			hundredthsUnitsByte = ' '
-			
+
 		# Thousandths not currently used
 		thousandthsUnitsByte = ' '
 
 		# Format as a string
 		periodClock = (
 			hoursTensByte, hoursUnitsByte, hoursColonByte, minutesTensByte, minutesUnitsByte, colonByte,
-			secondsTensByte, secondsUnitsByte, decimalByte,	tenthsUnitsByte, hundredthsUnitsByte, thousandthsUnitsByte)
+			secondsTensByte, secondsUnitsByte, decimalByte, tenthsUnitsByte, hundredthsUnitsByte, thousandthsUnitsByte)
 		clockS = '%s%s%s%s%s%s%s%s%s%s%s%s' % periodClock
 
 		# Period clock byte(s) HH:MM:SS.xcm , 12
@@ -462,7 +468,7 @@ class SerialPacket (object):
 				play_shotTenthsByte = 0
 			else:
 				play_shotTenthsByte = 1
-			# self.game.set_clock_data(name, '_tenthsUnits', play_shotTenthsByte) Does not exist
+		# self.game.set_clock_data(name, '_tenthsUnits', play_shotTenthsByte) Does not exist
 
 		play_shotTensByte = self._get_value(name + '_secondsTens', min_value_not_blanked=1)
 		play_shotUnitsByte = self._get_value(name + '_secondsUnits', min_value_not_blanked=0)
@@ -519,14 +525,16 @@ class SerialPacket (object):
 
 		# Minutes behavior
 		minutesTensByte = self._get_value(clockName + '_' + 'minutesTens', min_value_not_blanked=1)
-		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits', min_value_not_blanked=minutesTensByte == ' ')
+		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits',
+										   min_value_not_blanked=minutesTensByte == ' ')
 		if minutesTensByte == ' ' and minutesUnitsByte == ' ':
 			colonByte = ' '
 		else:
 			colonByte = ':'
 
 		# Seconds behavior
-		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens', min_value_not_blanked=minutesUnitsByte == ' ')
+		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens',
+										  min_value_not_blanked=minutesUnitsByte == ' ')
 		secondsUnitsByte = self._get_value(clockName + '_' + 'secondsUnits', min_value_not_blanked=0)
 
 		# Format as a string
@@ -608,14 +616,16 @@ class SerialPacket (object):
 
 		# Minutes behavior
 		minutesTensByte = self._get_value(clockName + '_' + 'minutesTens', min_value_not_blanked=0)
-		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits', min_value_not_blanked=minutesTensByte == ' ')
+		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits',
+										   min_value_not_blanked=minutesTensByte == ' ')
 		if minutesTensByte == ' ' and minutesUnitsByte == ' ':
 			colonByte = ' '
 		else:
 			colonByte = ':'
 
 		# Seconds behavior
-		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens', min_value_not_blanked=minutesUnitsByte == ' ')
+		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens',
+										  min_value_not_blanked=minutesUnitsByte == ' ')
 		secondsUnitsByte = self._get_value(clockName + '_' + 'secondsUnits', min_value_not_blanked=0)
 
 		# Format as a string
@@ -699,7 +709,7 @@ class SerialPacket (object):
 				thousandthsUnitsByte = int(packet[11])
 			self.game.set_game_data(clockName + '_' + timeListNames[8], tenthsUnitsByte, 1)
 			self.game.set_game_data(clockName + '_' + timeListNames[9], hundredthsUnitsByte, 1)
-			# self.game.set_game_data(clockName+'_'+'thousandthsUnits', thousandthsUnitsByte, 1) Does not exist
+		# self.game.set_game_data(clockName+'_'+'thousandthsUnits', thousandthsUnitsByte, 1) Does not exist
 
 		# Hours behavior
 		hoursTensByte = self._get_value(clockName + '_' + 'hoursTens', min_value_not_blanked=1)
@@ -711,14 +721,16 @@ class SerialPacket (object):
 
 		# Minutes behavior
 		minutesTensByte = self._get_value(clockName + '_' + 'minutesTens', min_value_not_blanked=hoursColonByte == ' ')
-		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits', min_value_not_blanked=minutesTensByte == ' ')
+		minutesUnitsByte = self._get_value(clockName + '_' + 'minutesUnits',
+										   min_value_not_blanked=minutesTensByte == ' ')
 		if minutesTensByte == ' ' and minutesUnitsByte == ' ':
 			colonByte = ' '
 		else:
 			colonByte = ':'
 
 		# Seconds behavior
-		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens', min_value_not_blanked=minutesUnitsByte == ' ')
+		secondsTensByte = self._get_value(clockName + '_' + 'secondsTens',
+										  min_value_not_blanked=minutesUnitsByte == ' ')
 		secondsUnitsByte = self._get_value(clockName + '_' + 'secondsUnits', min_value_not_blanked=0)
 		if colonByte == ' ':
 			decimalByte = '.'
@@ -784,7 +796,7 @@ class SerialPacket (object):
 
 				self.game.set_game_data('colonIndicator', colonIndicator, 1)
 				self.game.set_game_data('decimalIndicator', 0, 1)
-		
+
 		if self.game.get_game_data('colonIndicator') and 'C' in self.game.gameData['optionJumpers']:
 			colonIndicator = '*'
 		else:
@@ -825,66 +837,66 @@ class SerialPacket (object):
 		for number in self.game.statNumberList:
 			if number is not None:
 				if packet is not None:
-					if packet[count*6] == ' ':
+					if packet[count * 6] == ' ':
 						playerTen = 25
 					else:
-						playerTen = int(packet[count*6])
-					if packet[count*6+1] == ' ':
+						playerTen = int(packet[count * 6])
+					if packet[count * 6 + 1] == ' ':
 						playerUnit = 25
 					else:
-						playerUnit = int(packet[count*6+1])
+						playerUnit = int(packet[count * 6 + 1])
 					self.game.set_team_data(team, 'player' + number + 'Tens', playerTen, 1)
 					self.game.set_team_data(team, 'player' + number + 'Units', playerUnit, 1)
-					if packet[count*6+2] == ' ':
+					if packet[count * 6 + 2] == ' ':
 						foulTen = 25
 					else:
-						foulTen = int(packet[count*6+2])
-					if packet[count*6+3] == ' ':
+						foulTen = int(packet[count * 6 + 2])
+					if packet[count * 6 + 3] == ' ':
 						foulUnit = 25
 					else:
-						foulUnit = int(packet[count*6+3])
+						foulUnit = int(packet[count * 6 + 3])
 					self.game.set_team_data(team, 'foul' + number + 'Tens', foulTen, 1)
 					self.game.set_team_data(team, 'foul' + number + 'Units', foulUnit, 1)
-					if packet[count*6+4] == ' ':
+					if packet[count * 6 + 4] == ' ':
 						pointsTen = 25
 					else:
-						pointsTen = int(packet[count*6+4])
-					if packet[count*6+5] == ' ':
+						pointsTen = int(packet[count * 6 + 4])
+					if packet[count * 6 + 5] == ' ':
 						pointsUnit = 25
 					else:
-						pointsUnit = int(packet[count*6+5])
+						pointsUnit = int(packet[count * 6 + 5])
 					self.game.set_team_data(team, 'points' + number + 'Tens', pointsTen, 1)
 					self.game.set_team_data(team, 'points' + number + 'Units', pointsUnit, 1)
 					count += 1
 
 				playerTen = self._get_value(
-					'player'+number+'Tens', min_value_not_blanked=self.game.get_team_data(
+					'player' + number + 'Tens', min_value_not_blanked=self.game.get_team_data(
 						team, 'player' + number + 'Tens') > 9, team=team)
 				playerUnit = self._get_value(
-					'player'+number+'Units', min_value_not_blanked=self.game.get_team_data(
+					'player' + number + 'Units', min_value_not_blanked=self.game.get_team_data(
 						team, 'player' + number + 'Units') > 9, team=team)
 				playerString = '%s%s' % (playerTen, playerUnit)
 				string += playerString
 
 				foulTen = self._get_value(
-					'foul'+number+'Tens', min_value_not_blanked=self.game.get_team_data(
+					'foul' + number + 'Tens', min_value_not_blanked=self.game.get_team_data(
 						team, 'foul' + number + 'Tens') > 9, team=team)
 				foulUnit = self._get_value(
-					'foul'+number+'Units', min_value_not_blanked=self.game.get_team_data(
+					'foul' + number + 'Units', min_value_not_blanked=self.game.get_team_data(
 						team, 'foul' + number + 'Units') > 9, team=team)
 				foulString = '%s%s' % (foulTen, foulUnit)
 				string += foulString
 
 				pointsTen = self._get_value(
-					'points'+number+'Tens', min_value_not_blanked=self.game.get_team_data(
+					'points' + number + 'Tens', min_value_not_blanked=self.game.get_team_data(
 						team, 'points' + number + 'Tens') > 9, team=team)
 				pointsUnit = self._get_value(
-					'points'+number+'Units', min_value_not_blanked=self.game.get_team_data(
+					'points' + number + 'Units', min_value_not_blanked=self.game.get_team_data(
 						team, 'points' + number + 'Units') > 9, team=team)
 				pointsString = '%s%s' % (pointsTen, pointsUnit)
 				string += pointsString
 				self.decodePacket = self._string_eater(
-					self.decodePacket, places=(len(playerString)+len(foulString)+len(pointsString)))
+					self.decodePacket, places=(len(playerString) + len(foulString) + len(pointsString)))
 		return string
 
 	def _team_e_t_n_string(self, string, team, packet=None):
@@ -921,13 +933,6 @@ class SerialPacket (object):
 				if team == 'TEAM_1':
 					if name_check:
 						self.guestNameChangeFlag = True
-						len_check = len(stored_name)-len(name)
-						if self.printETNData:
-							print 'len(stored_name)', len(stored_name), 'len(name)', len(name), 'abs(len_check)', abs(len_check)
-						if stored_name and (len(name) <= 2 or abs(len_check) == 1):
-							#self.guestNameChangeOneCharFlag = True
-							if self.printETNData:
-								print 'single character change on guest'
 
 					if font_check or justify_check:
 						self.guestFontJustifyChangeFlag = True
@@ -935,17 +940,10 @@ class SerialPacket (object):
 				elif team == 'TEAM_2':
 					if name_check:
 						self.homeNameChangeFlag = True
-						len_check = len(stored_name)-len(name)
-						if self.printETNData:
-							print 'len(stored_name)', len(stored_name), 'len(name)', len(name), 'abs(len_check)', abs(len_check)
-						if stored_name and (len(name) <= 2 or abs(len_check) == 1):
-							#self.homeNameChangeOneCharFlag = True
-							if self.printETNData:
-								print 'single character change on home'
 
 					if font_check or justify_check:
 						self.homeFontJustifyChangeFlag = True
-								
+
 			self.game.set_team_data(team, 'name', name, 1)
 			self.game.set_team_data(team, 'font', font, 1)
 			self.game.set_team_data(team, 'justify', justify, 1)
@@ -958,7 +956,7 @@ class SerialPacket (object):
 
 		# Add padding if name length less than 20
 		padded_string = ''
-		padding = 20-len(name)
+		padding = 20 - len(name)
 		for x in range(padding):
 			padded_string += ' '
 		string += padded_string
@@ -981,7 +979,7 @@ class SerialPacket (object):
 			else:
 				TOL = int(packet[0])
 			self.game.set_team_data(team, 'timeOutsLeft', TOL, 1)
-			
+
 		teamTimeout = '%s' % (self._get_value('timeOutsLeft', min_value_not_blanked=0, team=team))
 		self.decodePacket = self._string_eater(self.decodePacket, places=len(teamTimeout))
 		string += teamTimeout
@@ -1021,20 +1019,20 @@ class SerialPacket (object):
 				pitchCountUnits = 0
 			else:
 				pitchCountUnits = int(packet[7])
-				
+
 			# Save double pitch count from single pitch count
 			# LINE5andDjumper= self.game.gameData['sport'] == 'MPLINESCORE5' and ('D' in self.game.gameData['optionJumpers'])
 			self.game.set_team_data(team, 'pitchCountHundreds', pitchCountHundreds, 1)
 			self.game.set_team_data(team, 'pitchCountTens', pitchCountTens, 1)
-			self.game.set_team_data(team, 'pitchCountUnits', pitchCountUnits, 1)			
+			self.game.set_team_data(team, 'pitchCountUnits', pitchCountUnits, 1)
 			if self.game.get_team_data(self.game.home, 'atBatIndicator') and team == self.game.guest:
 				self.game.set_game_data('singlePitchCountHundreds', pitchCountHundreds, 1)
 				self.game.set_game_data('singlePitchCountTens', pitchCountTens, 1)
-				self.game.set_game_data('singlePitchCountUnits', pitchCountUnits, 1)	
+				self.game.set_game_data('singlePitchCountUnits', pitchCountUnits, 1)
 			elif not self.game.get_team_data(self.game.home, 'atBatIndicator') and team == self.game.home:
 				self.game.set_game_data('singlePitchCountHundreds', pitchCountHundreds, 1)
 				self.game.set_game_data('singlePitchCountTens', pitchCountTens, 1)
-				self.game.set_game_data('singlePitchCountUnits', pitchCountUnits, 1)	
+				self.game.set_game_data('singlePitchCountUnits', pitchCountUnits, 1)
 
 			self.game.set_team_data(team, 'hitsHundreds', hitsHundreds, 1)
 			self.game.set_team_data(team, 'hitsTens', hitsTens, 1)
@@ -1052,19 +1050,25 @@ class SerialPacket (object):
 		errorsUnit = self._get_value('errorsUnits', min_value_not_blanked=0, team=team)
 		errorsString = '%s%s' % (errorsTen, errorsUnit)
 		string += errorsString
-		
+
 		# Save double pitch count from single pitch count
 		if self.game.gameData['sport'] == 'MPLINESCORE5' and not ('D' in self.game.gameData['optionJumpers']):
 			if self.game.get_team_data(self.game.home, 'atBatIndicator'):
 				# In Bottom
-				self.game.set_team_data(self.game.guest, 'pitchCountHundreds', self.game.get_game_data('singlePitchCountHundreds'), 1)
-				self.game.set_team_data(self.game.guest, 'pitchCountTens', self.game.get_game_data('singlePitchCountTens'), 1)
-				self.game.set_team_data(self.game.guest, 'pitchCountUnits', self.game.get_game_data('singlePitchCountUnits'), 1)	
-	
+				self.game.set_team_data(self.game.guest, 'pitchCountHundreds',
+										self.game.get_game_data('singlePitchCountHundreds'), 1)
+				self.game.set_team_data(self.game.guest, 'pitchCountTens',
+										self.game.get_game_data('singlePitchCountTens'), 1)
+				self.game.set_team_data(self.game.guest, 'pitchCountUnits',
+										self.game.get_game_data('singlePitchCountUnits'), 1)
+
 			else:
-				self.game.set_team_data(self.game.home, 'pitchCountHundreds', self.game.get_game_data('singlePitchCountHundreds'), 1)
-				self.game.set_team_data(self.game.home, 'pitchCountTens', self.game.get_game_data('singlePitchCountTens'), 1)
-				self.game.set_team_data(self.game.home, 'pitchCountUnits', self.game.get_game_data('singlePitchCountUnits'), 1)	
+				self.game.set_team_data(self.game.home, 'pitchCountHundreds',
+										self.game.get_game_data('singlePitchCountHundreds'), 1)
+				self.game.set_team_data(self.game.home, 'pitchCountTens',
+										self.game.get_game_data('singlePitchCountTens'), 1)
+				self.game.set_team_data(self.game.home, 'pitchCountUnits',
+										self.game.get_game_data('singlePitchCountUnits'), 1)
 
 		pitchCountHundred = self._get_value('pitchCountHundreds', min_value_not_blanked=1, team=team)
 		pitchCountTen = self._get_value('pitchCountTens', min_value_not_blanked=pitchCountHundred == ' ', team=team)
@@ -1204,7 +1208,7 @@ class SerialPacket (object):
 					scoreInning = int(packet[inning])
 				self.game.set_team_data(team, 'scoreInn' + str(inning + 1), scoreInning, 1)
 			scoreInn = self._get_value(
-				'scoreInn'+str(inning+1), min_value_not_blanked=self.game.get_team_data(
+				'scoreInn' + str(inning + 1), min_value_not_blanked=self.game.get_team_data(
 					team, 'scoreInn' + str(inning + 1)) > 9, team=team)
 			string += str(scoreInn)
 		self.decodePacket = self._string_eater(self.decodePacket, places=len(range(15)))
@@ -1217,37 +1221,37 @@ class SerialPacket (object):
 		elif team[-1] == '2':
 			teamName = 'teamTwo'
 		for x, clockNumber in enumerate([1, 2]):
-			clockName = pen+str(clockNumber)+'_'+teamName
+			clockName = pen + str(clockNumber) + '_' + teamName
 			if packet is not None:
-				if packet[0+x*6] == ' ':
+				if packet[0 + x * 6] == ' ':
 					PLAYER_NUMBERTens = 255
 				else:
-					PLAYER_NUMBERTens = int(packet[0+x*6])
-				if packet[1+x*6] == ' ':
+					PLAYER_NUMBERTens = int(packet[0 + x * 6])
+				if packet[1 + x * 6] == ' ':
 					PLAYER_NUMBERUnits = 255
 				else:
-					PLAYER_NUMBERUnits = int(packet[1+x*6])
-				if packet[2+x*6] == ' ':
+					PLAYER_NUMBERUnits = int(packet[1 + x * 6])
+				if packet[2 + x * 6] == ' ':
 					minutesUnits = 255
 				else:
-					minutesUnits = int(packet[2+x*6])
+					minutesUnits = int(packet[2 + x * 6])
 
-				if packet[4+x*6] == ' ':
+				if packet[4 + x * 6] == ' ':
 					secondsTens = 255
 				else:
-					secondsTens = int(packet[4+x*6])
-				if packet[5+x*6] == ' ':
+					secondsTens = int(packet[4 + x * 6])
+				if packet[5 + x * 6] == ' ':
 					secondsUnits = 255
 				else:
-					secondsUnits = int(packet[5+x*6])
-					
+					secondsUnits = int(packet[5 + x * 6])
+
 				if (
 						(minutesUnits == 255 and secondsTens == 255 and secondsUnits == 255)
 						or (minutesUnits == 0 and secondsTens == 0 and secondsUnits == 0)):
 					colon = False
 				else:
 					colon = True
-										
+
 				self.game.set_team_data(team, 'TIMER' + str(clockNumber) + '_PLAYER_NUMBERTens', PLAYER_NUMBERTens, 1)
 				self.game.set_team_data(team, 'TIMER' + str(clockNumber) + '_PLAYER_NUMBERUnits', PLAYER_NUMBERUnits, 1)
 				self.game.clockDict[clockName].timeUnitsDict['minutesUnits'] = minutesUnits
@@ -1256,11 +1260,11 @@ class SerialPacket (object):
 				self.game.clockDict[clockName].timeUnitsDict['secondsUnits'] = secondsUnits
 
 			timerPlayerNumberTens = self._get_value(
-				'TIMER'+str(clockNumber)+'_PLAYER_NUMBERTens',
+				'TIMER' + str(clockNumber) + '_PLAYER_NUMBERTens',
 				min_value_not_blanked=self.game.get_team_data(
 					team, 'TIMER' + str(clockNumber) + '_PLAYER_NUMBERTens') > 9, team=team)
 			timerPlayerNumberUnits = self._get_value(
-				'TIMER'+str(clockNumber)+'_PLAYER_NUMBERUnits',
+				'TIMER' + str(clockNumber) + '_PLAYER_NUMBERUnits',
 				min_value_not_blanked=self.game.get_team_data(
 					team, 'TIMER' + str(clockNumber) + '_PLAYER_NUMBERUnits') > 9, team=team)
 			timerPlayerNumber = '%s%s' % (timerPlayerNumberTens, timerPlayerNumberUnits)
@@ -1491,7 +1495,7 @@ class SerialPacket (object):
 		errorPosition = self._get_value('errorPosition', min_value_not_blanked=1)
 		stuff = '%s%s%s%s%s%s%s' % (innBot, balls, strikes, outs, hit, error, errorPosition)
 		string += stuff
-		
+
 		# -----
 		if packet is not None:
 			if packet[7] == ' ':
@@ -1515,11 +1519,11 @@ class SerialPacket (object):
 		pitchSpeedUnit = self._get_value('pitchSpeedUnits', min_value_not_blanked=0)
 		pitchSpeed = '%s%s%s' % (pitchSpeedHundred, pitchSpeedTen, pitchSpeedUnit)
 		string += pitchSpeed
-		
+
 		# -----10
 		pitchSpeedUnitOfMeasure = ' '
 		string += pitchSpeedUnitOfMeasure
-		
+
 		# -----
 		if packet is not None:
 			if packet[11] == ' ':
@@ -1532,12 +1536,12 @@ class SerialPacket (object):
 				batterNumberUnits = int(packet[12])
 			self.game.set_game_data('batterNumberTens', batterNumberTens, 1)
 			self.game.set_game_data('batterNumberUnits', batterNumberUnits, 1)
-			
+
 		batterNumberTen = self._get_value('batterNumberTens', min_value_not_blanked=1)
 		batterNumberUnit = self._get_value('batterNumberUnits', min_value_not_blanked=0)
 		batterNumber = '%s%s' % (batterNumberTen, batterNumberUnit)
 		string += batterNumber
-		
+
 		battingAverage = '      '  # 6 bytes Player Batting Average N.NNNN
 		string += battingAverage
 
@@ -1546,13 +1550,14 @@ class SerialPacket (object):
 
 		runnerOnSecond = '  '  # 2 bytes Runner on Second NN
 		string += runnerOnSecond
-		
+
 		runnerOnThird = '  '  # 2 bytes Runner on Third NN
 		string += runnerOnThird
-		
+
 		self.decodePacket = self._string_eater(
 			self.decodePacket, places=(
-					len(stuff) + len(pitchSpeed) + len(pitchSpeedUnitOfMeasure) + len(batterNumber) + len(battingAverage)
+					len(stuff) + len(pitchSpeed) + len(pitchSpeedUnitOfMeasure) + len(batterNumber) + len(
+				battingAverage)
 					+ len(runnerOnFirst) + len(runnerOnSecond) + len(runnerOnThird))
 		)
 		return string
@@ -1565,7 +1570,7 @@ class SerialPacket (object):
 				periodHorn = 1
 
 			self.game.set_game_data('periodHorn', periodHorn, 1)
-			
+
 			if self.game.gameSettings['visualHornEnable']:
 				self.game.gameData['visualHornIndicator1'] = periodHorn
 				if self.game.gameData['sportType'] == 'basketball' or self.game.gameData['sportType'] == 'hockey':
