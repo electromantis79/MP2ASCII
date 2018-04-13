@@ -179,16 +179,15 @@ class Console(object):
 		if not self.checkEventsActiveFlag:
 			self.checkEventsActiveFlag = True
 
-			self.addrMap.un_map(self.s.receiveList)
-
 			# This aligns the output to after the input receive gap starts (This only effects the start of output thread)
 			if not self.previousByteCount:
 				# This should make the output thread fire shift_time ms before the next check events firing
 				shift_time = 0.001
 				self.alignTime = tic + self.checkEventsRefreshFrequency - shift_time
-
-			# Clear receive list
 			self.previousByteCount = len(self.s.receiveList)
+
+			# Save any good data received to the game
+			self.addrMap.un_map(self.s.receiveList)
 			self.s.receiveList = []
 
 			# Reset sport
