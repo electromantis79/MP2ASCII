@@ -258,7 +258,7 @@ class MpDataHandler(object):
 			self.H_Bit, self.lowNibble = self._check_next(units=self.lowNibble, tens=None, hundreds_flag=self.H_Bit)
 
 	def _check_next(self, units=None, tens=None, hundreds_flag=None, h_l_units_blank=False):
-		"""Check higher place values and blank accordingly."""
+		# Check higher place values and blank accordingly
 		
 		if units is None:
 			print ('You have to give me a units value to use this function!!!!')
@@ -431,7 +431,20 @@ class MpDataHandler(object):
 		return self.LH_Word
 
 	# decode methods ------------------------------
-	
+
+	def decode(self, low_high__word):
+		"""Decodes a MP protocol word and returns the group, bank, word, I Bit, and segments A-G."""
+		seg_addr = self._low_high_protocol_unwrapper(low_high__word)
+		group, bank, word, data = self._segment_address_to_gbwd(seg_addr)
+
+		if (data & 0x0100) >> 8:
+			i_bit = 1
+		else:
+			i_bit = 0
+		numeric_data = (data & 0x00ff)
+
+		return group, bank, word, i_bit, numeric_data
+
 	def _low_high_protocol_unwrapper(self, low_high_word):
 		low_high = ((low_high_word & 0x7f00) >> 1) | (low_high_word & 0x007f)
 		self.lowByte = (low_high & 0x3f80) >> 7
@@ -475,272 +488,3 @@ class MpDataHandler(object):
 				numeric_data = digit
 				break  # this avoids value 0 also calling value blank
 		return numeric_data
-
-	def decode(self, low_high__word):
-		"""Decodes a MP protocol word and returns the group, bank, word, I Bit, and segments A-G."""
-		seg_addr = self._low_high_protocol_unwrapper(low_high__word)
-		group, bank, word, data = self._segment_address_to_gbwd(seg_addr)
-
-		if (data & 0x0100) >> 8:
-			i_bit = 1
-		else:
-			i_bit = 0
-		numeric_data = (data & 0x00ff)
-
-		return group, bank, word, i_bit, numeric_data
-
-# TODO: clean this function and create real test functions
-
-
-'''
-def test():
-	"""Test function if module ran independently."""
-	print "Program Started\n"
-	mp=MpDataHandler()
-	choice=100
-	mpOUT=MpDataHandler()
-
-	while choice:
-		if choice  ==  100:
-			print
-			print '0 - Quit'
-			#print "1 - _segment_address_to_gbwd"
-			print "2 - _gbwd_to_segment_address"
-			print "3 - _low_high_protocol_wrapper"
-			#print "4 - lowHigh_Protocol_UNWrapper"
-			#print "5 - _toggle_segment"
-			print "6 - _segments_change"
-			print "7 - _digitChange"
-			print "8 - _BCDchange"
-			#print "9 - MP_Address_to_GBWD"
-			#print "10 - GBWD_to_MP_Address"
-			print "11 - _blankChange"
-			print "12 - encode"
-			print '13 - Decode'
-			print '14 - encode then Decode'
-			try:
-				choice = input("\nWhich do you select? ")
-			except:
-				choice=100
-				pass
-			print
-
-		elif choice  ==  2:
-			data1 = input("Input Group: ")
-			data2 = input("Input Bank: ")
-			data3 = input("Input Word: ")
-			data4 = int(float.fromhex(raw_input("Input hex Data: ")))
-			print "Segment Address: 0x%X" % mp._gbwd_to_segment_address(data1, data2, data3, data4)
-			choice = 100
-
-		elif choice  ==  3:
-			data = int(float.fromhex(raw_input("Input 14-bit hex value to be converted: ")))
-			#print "Wrapped LowHigh Word: %X" % mp._low_high_protocol_wrapper(data)
-			print "Data before: %s, Data after: %s" % (bin(data), bin(mp._low_high_protocol_wrapper(data)))
-			choice = 100
-
-
-		elif choice  ==  6:
-			data = int(float.fromhex(raw_input("Input hex Data: ")))
-			segment = raw_input("Input character string a to g to be set: ")
-			print "Data before: 0x%X, Data after: 0x%X" % (data, mp._segments_change(segment, data))
-			choice = 100
-
-		elif choice  ==  7:
-			data = int(float.fromhex(raw_input("Input hex Data: ")))
-			digit = int(float.fromhex(raw_input("Input a digit to be added to data: ")))
-			print "Data before: 0x%X, Data after: 0x%X" % (data, mp._digitChange(digit, data))
-			choice = 100
-
-		elif choice  ==  8:
-			data = int(float.fromhex(raw_input("Input hex Data: ")))
-			digit = input("Input a a 2 digit number to be added to data in BCD: ")
-			print "Data before: 0x%X, Data after: 0x%X" % (data, mp._BCDchange(digit, data))
-			choice = 100
-
-		elif choice  ==  11:
-			data1 = raw_input("Input Data Format: ")
-			data2 = input("Input Numeric Data: ")
-			data3 = input("Input 1 for Blank if Zero: ")
-			data4 = input("Input 1 for Place Holder: ")
-			print "Data Blanked: 0x%X" % mp._blankChange(data1, data2, data3, data4)
-			choice = 100
-
-		elif choice  ==  12:
-			data1 = input("Input Group: ")
-			data2 = input("Input Bank: ")
-			data3 = input("Input Word: ")
-			data4 = input("Input I Segment: ")
-			data5 = input("Input H Segment: ")
-			data6 = input("Input High Nibble: ")
-			data7 = input("Input Low Nibble: ")
-			data8 = input("Input Blank Type: ")
-			data9 = raw_input("Input Segment Data: ")
-			data10 = input("Input pass3_4Flag: ")
-
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "highNibble = ", mp.highNibble
-			print "lowNibble = ", mp.lowNibble
-			print "blankType = ", mp.blankType
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print "Input pass3_4Flag = ", mp.pass3_4Flag
-			print
-			mpEncode = mp.encode(data1, data2, data3, data4, data5, data6, data7, data8, data9, pass3_4Flag=data10)
-			print "Encoded Data: 0x%02X%02X" % (mp.lowByte, mp.highByte)
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "highNibble = ", mp.highNibble
-			print "lowNibble = ", mp.lowNibble
-			print "blankType = ", mp.blankType
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print "Input pass3_4Flag = ", mp.pass3_4Flag
-			print
-			choice = 100
-
-		elif choice  ==  13:
-			data3 = input("Input LH_Word: ")
-
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "numericData = ", mp.numericData
-			print "blankIFzero = ", mp.blankIFzero
-			print "placeHolder = ", mp.placeHolder
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print
-			mpDecode = mp.Decode(data3)
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "numericData = ", mp.numericData
-			print "blankIFzero = ", mp.blankIFzero
-			print "placeHolder = ", mp.placeHolder
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print
-			choice = 100
-
-		elif choice  ==  14:
-			data1 = input("Input Group: ")
-			data2 = input("Input Bank: ")
-			data3 = input("Input Word: ")
-			data4 = input("Input I Segment: ")
-			data5 = input("Input H Segment: ")
-			data6 = input("Input High Nibble: ")
-			data7 = input("Input Low Nibble: ")
-			data8 = input("Input Blank Type: ")
-			data9 = raw_input("Input Segment Data: ")
-
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "highNibble = ", mp.highNibble
-			print "lowNibble = ", mp.lowNibble
-			print "blankType = ", mp.blankType
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print
-			mpEncode = mp.encode(data1, data2, data3, data4, data5, data6, data7, data8, data9)
-			print "Encoded Data: 0x%02X%02X" % (mp.lowByte, mp.highByte)
-			print
-			print "data = 0x%03X" % mp.data
-			print "addr = 0x%02X" % mp.addr
-			print "highNibble = ", mp.highNibble
-			print "lowNibble = ", mp.lowNibble
-			print "blankType = ", mp.blankType
-			print "segmentData = ", mp.segmentData
-			print "group = ", mp.group
-			print "bank = ", mp.bank
-			print "word = ", mp.word
-			print "I_Bit = ", mp.I_Bit
-			print "H_Bit = ", mp.H_Bit
-			print "LH_Word = %s" % mp.LH_Word
-			print "seg_addr = 0x%04X" % mp.seg_addr
-			print
-			mpOUTDecode = mpOUT.Decode(mpEncode)
-
-			print "group = ", mpOUT.group
-			print "bank = ", mpOUT.bank
-			print "word = ", mpOUT.word
-			print "I_Bit = ", mpOUT.I_Bit
-			print "numericData = ", mpOUT.numericData
-			choice = 100
-
-		elif choice  ==  0:
-			break
-		else:
-			choice = 100
-
-"""
-		elif choice  ==  1:
-			data = int(float.fromhex(raw_input("Input 14-bit hex value to be converted: ")))
-			print "Group: %X, Bank: %X, Word: %X, Data: 0x%X" % mp._segment_address_to_gbwd(data)
-			choice = 100
-"""
-"""
-		elif choice  ==  4:
-			data = int(float.fromhex(raw_input("Input 14-bit hex value to be converted: ")))
-			#print "UN-Wrapped LowHigh Word: %X" % mp.lowHigh_Protocol_UNWrapper(data)
-			print "Data before: 0x%X, Data after: 0x%X" % (data, mp._low_high_protocol_unwrapper(data))
-			choice = 100
-
-
-		elif choice  ==  5:
-			data = int(float.fromhex(raw_input("Input hex Data: ")))
-			segment = raw_input("Input a character a to i to be toggled: ")
-			print "Data before: 0x%X, Data after: 0x%X" % (data, mp._toggle_segment(segment, data))
-			choice = 100
-"""
-"""
-		elif choice  ==  9:
-			data = int(float.fromhex(raw_input("Input 5-bit hex value to be converted: ")))
-			print "Group: %X, Bank: %X, Word: %X" % mp.MP_Address_to_GBW(data)
-			choice = 100
-
-		elif choice  ==  10:
-			data1 = input("Input Group: ")
-			data2 = input("Input Bank: ")
-			data3 = input("Input Word: ")
-			print "Segment Address: 0x%X" % mp._GBW_to_MP_Address(data1, data2, data3)
-			choice = 100
-"""
-
-if __name__  ==  '__main__':
-	test()
-'''
