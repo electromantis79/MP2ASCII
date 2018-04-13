@@ -12,7 +12,6 @@
 
 """
 
-import time
 import app.serial_IO.serial_packet
 import app.utils.Platform
 

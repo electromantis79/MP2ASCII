@@ -17,6 +17,7 @@
 import time
 import os
 import timeit
+
 from sys import platform as _platform
 
 # thread_timer related
@@ -51,12 +52,13 @@ def thread_timer(passed_function, period=.01, arg=None, align_time=0.0):
 			next_call = next_call+period*count
 			print 'thread_timer adjusted', start_time-align_time, 'seconds'
 
-	stamp = 0
 	if _platform == "linux" or _platform == "linux2":
 		try:
-			prctl.set_name(passed_function.__name__)
+			prctl.set_name(passed_function.__name__)  # Used only for htop testing
 		except:
 			pass
+
+	stamp = 0
 	while 1:
 		stamp += 1
 		next_call = next_call+period
@@ -70,6 +72,7 @@ def thread_timer(passed_function, period=.01, arg=None, align_time=0.0):
 			now = time.time()
 			time.sleep(next_call-now)
 		except:
+			now = time.time()
 			while (next_call-now) < 0:
 				next_call = next_call+period
 				count += 1
