@@ -1201,11 +1201,11 @@ class AddressMapping(object):
 		elif self.game.gameData['sport'] == 'MPMULTISPORT1-baseball':
 			address_word_list = [5, 9, 11, 10, 13, 14, 15, 16, 17, 18, 21, 22, 24, 29, 30, 31, 32, 12]
 		elif self.game.gameData['sport'] == 'MPMULTISPORT1-football':
-			address_word_list = [5, 9, 10, 17, 21, 22, 24, 29, 30, 31, 11, 12]
+			address_word_list = [5, 9, 10, 19, 20, 21, 22, 24, 29, 30, 31, 11, 12]
 		elif self.game.gameData['sport'] == 'MPLX3450-baseball':
 			address_word_list = [5, 9, 11, 10, 13, 14, 15, 16, 17, 18, 21, 22, 24, 29, 30, 31, 32, 12]
 		elif self.game.gameData['sport'] == 'MPLX3450-football':
-			address_word_list = [5, 9, 10, 17, 21, 22, 24, 29, 30, 31, 11, 12]
+			address_word_list = [5, 9, 10, 19, 20, 21, 22, 24, 29, 30, 31, 11, 12]
 		elif self.statFlag:
 			address_word_list = [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23]
 		else:
@@ -1230,38 +1230,51 @@ class AddressMapping(object):
 				self.multisportChangeSportCount += 1
 			else:
 				self.multisportChangeSportCount = 0
-				check_game_dict = {}
+				change_flag = False
+				sport = self.game.gameData['sport']
+
 				# Select values to compare
 				if mp_multisport1:
 					if self.game.gameData['sport'] == 'MPMULTISPORT1-baseball':
 						# Baseball
-						check_game_dict = {'segmentQuarterFlag': True}
+						if self.game.gameData['segmentQuarterFlag']:
+							change_flag = True
 						sport = 'MPMULTISPORT1-football'
+
 					else:
 						# Football
-						check_game_dict = {'segmentQuarterFlag': False, 'quarter': 1}
+						if self.game.teamsDict['TEAM_2'].teamData['timeOutsLeft'] == 16:
+							change_flag = True
 						sport = 'MPMULTISPORT1-baseball'
+
 				elif mp_lx3450:
 					if self.game.gameData['sport'] == 'MPLX3450-baseball':
 						# Baseball
-						check_game_dict = {'segmentQuarterFlag': True}
+						if self.game.gameData['segmentQuarterFlag']:
+							change_flag = True
 						sport = 'MPLX3450-football'
+
 					else:
 						# Football
-						check_game_dict = {'segmentQuarterFlag': False, 'quarter': 1}
+						if self.game.teamsDict['TEAM_2'].teamData['timeOutsLeft'] == 16:
+							change_flag = True
 						sport = 'MPLX3450-baseball'
+
 				elif mp_soccer_lx1:
 					if self.game.gameData['sport'] == 'MPSOCCER_LX1-soccer':
 						# Soccer
-						check_game_dict = {'bcDetectFlag': True}
+						if self.game.gameData['bcDetectFlag']:
+							change_flag = True
 						sport = 'MPSOCCER_LX1-football'
+
 					else:
 						# Football
-						check_game_dict = {'down': 0}
+						if self.game.gameData['down'] == 0:
+							change_flag = True
 						sport = 'MPSOCCER_LX1-soccer'
 
 				# Check for multisport reset state
-				if check_game_dict.viewitems() <= self.game.gameData.viewitems():
+				if change_flag:
 
 					# Change sport
 					from config_default_settings import Config
@@ -1404,7 +1417,7 @@ class AddressMapping(object):
 						elif 0b00010000 & numeric_data == 0:
 							self.game.gameData['segmentQuarterFlag'] = False
 				elif self.game.gameData['sport'] == 'MPMULTISPORT1-baseball' or self.game.gameData['sport'] == 'MPLX3450-baseball':
-					if segment_data == 'bc_strike' or segment_data == 'period_efg':
+					if segment_data == 'bc_strike':
 						if 0b00010000 & numeric_data:
 							self.game.gameData['segmentQuarterFlag'] = True
 						elif 0b00010000 & numeric_data == 0:
