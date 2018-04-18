@@ -1004,6 +1004,8 @@ class AddressMapping(object):
 		Decodes words in the word_list and saves them to the game object based on sport.
 		"""
 		# PUBLIC method
+		if self.verbose:
+			print '--------------word_list---------------', word_list
 
 		address_word_list = self._select_address_word_list()
 
@@ -1013,9 +1015,11 @@ class AddressMapping(object):
 			addr = self.mp.gbw_to_mp_address(group, bank, word) + 1
 			decode_data = addr, group, bank, word, i_bit, numeric_data
 			if self.verbose:
-				print '\naddr:', addr, group, bank, word, 'I:', i_bit, 'Data:', numeric_data
+				print '\naddr:', addr, group, bank, word, 'I:', i_bit, 'Data:', numeric_data, bin(numeric_data)
 
 			if self._tunnel_check(word, numeric_data):
+				if self.verbose:
+					print 'tunnel_check True'
 				# Tunneling data
 				app.utils.functions.verbose(['word', word], self.verboseTunnel)
 				if word == 1:
@@ -1027,6 +1031,8 @@ class AddressMapping(object):
 						self.quantumETNTunnel = 1
 
 			elif self.quantumDimmingTunnel or self.quantumETNTunnel:
+				if self.verbose:
+					print 'self.quantumDimmingTunnel or self.quantumETNTunnel'
 				app.utils.functions.verbose(['word', word], self.verboseTunnel)
 				if word == 1:
 					if not (0xaa <= numeric_data < 0xf0):
@@ -1106,6 +1112,8 @@ class AddressMapping(object):
 
 			else:
 				# Normal data
+				if self.verbose:
+					print 'normal un_map'
 				if addr in address_word_list:
 					# Handle persistent alt selection
 					alt = 1
@@ -1153,14 +1161,16 @@ class AddressMapping(object):
 						if 'C' in self.game.gameData['optionJumpers']:
 							if addr == 21 or addr == 22:
 								alt = 2
+
 					if self.verbose:
 						print 'alt', alt
 
-					# Get the current variable names for all bits
+					# Shift address for stat home team
 					if self.statFlag:
 						if i_bit:
 							addr = addr+32
 
+					# Get the current variable names for all bits
 					data_names = self._get_dict_info(addr, alt=alt)
 
 					# Save values if checks are passed
@@ -1288,7 +1298,7 @@ class AddressMapping(object):
 	def _tunnel_check(word, numeric_data):
 		high_data = (numeric_data & 0xf0) >> 4
 		low_data = numeric_data & 0x0f
-		if word == 1 and (low_data >= 0xa and low_data != 0xf) or (high_data >= 0xa and high_data != 0xf):
+		if word == 1 and ((low_data >= 0xa and low_data != 0xf) or (high_data >= 0xa and high_data != 0xf)):
 			return 1
 		return 0
 
@@ -1313,7 +1323,6 @@ class AddressMapping(object):
 			if segment_data == '':
 				h_bit_team = self._team_extract(h_bit_name)
 				i_bit_team = self._team_extract(i_bit_name)
-				# high_nibble_team = self._team_extract(high_nibble_name)  # may not need
 				low_nibble_team = self._team_extract(low_nibble_name)
 
 				data_names = self._check_period_clock_state(decode_data, data_names, high_data, low_data, h_bit=h_bit)
@@ -1321,7 +1330,6 @@ class AddressMapping(object):
 
 				self._set_period_clock_un_map_dict(i_bit_name, i_bit)
 				self._set_period_clock_un_map_dict(h_bit_name, h_bit)
-				self._set_period_clock_un_map_dict(high_nibble_name, high_data)
 				self._set_period_clock_un_map_dict(low_nibble_name, low_data)
 
 				# Special cases not to save I Bit --------------------
@@ -1359,7 +1367,6 @@ class AddressMapping(object):
 						'addr', addr, 'i_bit_team', i_bit_team, 'i_bit_name', i_bit_name, i_bit,
 						'h_bit_team', h_bit_team, 'h_bit_name', h_bit_name, h_bit)
 					print (
-						'high_nibble_team', high_nibble_team, 'high_nibble_name', high_nibble_name, high_data,
 						'low_nibble_team', low_nibble_team, 'low_nibble_name', low_nibble_name, low_data)
 			else:
 				# Decode segment data's storage value
@@ -1563,8 +1570,9 @@ class AddressMapping(object):
 	def _set_data(self, name, value, team=None):
 		if self._game_value_check(name):
 			self.game.set_game_data(name, value, places=1)
+
 		elif self._team_value_check(name):
-			if name[:7] == 'penalty':
+			if name[:7] == 'penalty' and self.game.gameData['sport'] == 'MPHOCKEY_LX1':
 				timer_number = name[7]
 				name = self._trim_penalty(name)
 				team_string = name[:7]
@@ -1585,6 +1593,7 @@ class AddressMapping(object):
 				self.game.set_team_data(team, name, value, places=1)
 		elif self._period_clock_value_check(name):
 			self.game.set_game_data('periodClock_' + name, value, places=1)
+
 		else:
 			print 'FAIL'
 
